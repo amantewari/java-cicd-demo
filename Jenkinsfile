@@ -14,3 +14,17 @@ pipeline {
     }      
 }
 
+       stage('Docker Build') {
+            steps {
+                script {
+                    def imageName = 'demo-app'
+                    sh "docker build -t ${imageName} ."
+                }
+            }
+        }
+
+        stage('Docker Run') {
+            steps {
+                script {
+                    def imageName = 'demo-app'
+                    sh "docker run -d -p 8080:8080 --name ${imageName} ${imageName}"
