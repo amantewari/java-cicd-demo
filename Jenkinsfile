@@ -9,7 +9,6 @@ pipeline {
          stage('Docker Build & Push') {
             steps {
                 script {
-                    echo "Docker plugin version check: ${docker.version()}"
                     def dockerImage = docker.build("amandevopss/amandevopss:latest")
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials-id') {
                         dockerImage.push()
