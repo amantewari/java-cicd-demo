@@ -6,11 +6,6 @@ pipeline {
                 sh 'mvn clean install'
           }
         }
-        stage('Run') {
-            steps {
-                sh 'java -jar target/*.jar'
-          }
-        }
       stage('Docker Build') {
             steps {
                 script {
