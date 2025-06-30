@@ -19,6 +19,7 @@ pipeline {
             steps {
                 script {
                     def imageName = 'demo-app'
+                    sh 'docker rm -f demo-app || true'
                     sh "docker run -d -p 9090:9090 --name ${imageName} ${imageName}"
                 }
             }
