@@ -11,10 +11,7 @@ pipeline {
                 sh 'java -jar target/*.jar'
           }
         }
-    }      
-}
-
-       stage('Docker Build') {
+      stage('Docker Build') {
             steps {
                 script {
                     def imageName = 'demo-app'
@@ -23,8 +20,17 @@ pipeline {
             }
         }
 
-        stage('Docker Run') {
+      stage('Docker Run') {
             steps {
                 script {
                     def imageName = 'demo-app'
-                    sh "docker run -d -p 8080:8080 --name ${imageName} ${imageName}"
+                    sh "docker run -d -p 9090:9090 --name ${imageName} ${imageName}"
+                }
+            }
+         }
+      }  
+}
+
+        
+
+        
