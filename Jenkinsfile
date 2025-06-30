@@ -6,25 +6,23 @@ pipeline {
                 sh 'mvn clean install'
           }
         }
-      stage('Docker Build') {
+         stage('Docker Build & Push') {
             steps {
                 script {
-                    def imageName = 'demo-app'
-                    sh "docker build -t ${imageName} ."
+                    dockerImage = docker.build("yourdockerhub/java-cicd-demo")
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials-id') {
+                        dockerImage.push()
+                    }
                 }
             }
         }
-
-      stage('Docker Run') {
+        stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    def imageName = 'demo-app'
-                    sh 'docker rm -f ${imageName}'
-                    sh "docker run -d -p 9090:9090 --name ${imageName} ${imageName}"
-                }
+                sh 'kubectl apply -f k8s/deployment.yaml'
+                sh 'kubectl apply -f k8s/service.yaml'
             }
-         }
-      }  
+        }
+    }
 }
 
         
