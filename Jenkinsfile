@@ -6,6 +6,11 @@ pipeline {
                 sh 'mvn clean install'
           }
         }
+         stage('Check Docker Version') {
+            steps {
+                sh 'docker --version'
+            }
+        }
          stage('Docker Build & Push') {
             steps {
                 script {
