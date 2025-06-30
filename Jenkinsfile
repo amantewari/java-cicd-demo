@@ -9,7 +9,7 @@ pipeline {
          stage('Docker Build & Push') {
             steps {
                 script {
-                    dockerImage = docker.build("yourdockerhub/java-cicd-demo")
+                    def dockerImage = docker.build("yourdockerhub/java-cicd-demo", ".")
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials-id') {
                         dockerImage.push()
                     }
