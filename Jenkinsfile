@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        KUBECONFIG = credentials('kubeconfig-jenkins')
+    }
       stages {
         stage('Build') {
             steps {
@@ -24,6 +27,13 @@ pipeline {
                         dockerImage.push()
                     }
                 }
+            }
+        }
+
+                stage('check k8s connection') {
+            steps {
+                sh 'kubectl get pods -A'
+               
             }
         }
         stage('Deploy to Kubernetes') {
