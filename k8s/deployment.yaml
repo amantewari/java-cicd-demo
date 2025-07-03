@@ -16,4 +16,4 @@ spec:
         - name: java-cicd
           image: amandevopss/amandevopss:latest
           ports:
-            - containerPort: 8080
+            - containerPort: 9090
