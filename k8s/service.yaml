@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-cicd-service
+spec:
+  selector:
+    app: java-cicd
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+      nodePort: 30090  # You can choose any port between 30000–32767
