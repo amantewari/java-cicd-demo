@@ -4,3 +4,45 @@
         <url>https://artifact.it.att.com/artifactory/apm0009754-mvn-releases</url>
     </repository>
 </distributionManagement>
+
+Microservice Installation Using Jenkins
+
+1. Introduction
+We are installing two microservices using Jenkins:
+- OrderMS: Manages orders
+- PathDS: Handles path data services
+
+Why Jenkins?
+- Automates builds and deployments
+- Ensures consistency across environments (Dev, QA, Prod)
+
+2. Jenkins Pipeline Overview
+Our Jenkins pipeline has two main stages:
+1. DB_INIT – Prepares the database (schema migrations, seed data)
+2. BUILD_DEPLOY – Builds and deploys the microservice
+
+3. Pipeline Parameters
+To make the pipeline flexible, we use two parameters:
+- DB_URL: Database connection string for the target environment
+- NAMESPACE: Kubernetes namespace for deployment
+
+4. DB_INIT Stage (Database Initialization)
+What happens in DB_INIT:
+- Connect to the database using DB_URL
+- Execute schema migrations (e.g., Flyway/Liquibase scripts)
+- Seed initial data if required
+
+Why separate this step?
+- Ensures database is ready before deploying the microservice
+- Prevents runtime failures due to missing schema changes
+
+5. BUILD_DEPLOY Stage (Build & Deploy)
+What happens in BUILD_DEPLOY:
+- Build the microservice (e.g., Maven/Gradle build)
+- Create Docker image & push to registry
+- Deploy to the specified namespace (using Helm/kubectl)
+
+Why separate this step?
+- Easier debugging (separates DB and build issues)
+- Allows DB updates independent of code changes
+
