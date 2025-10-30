@@ -1,0 +1,136 @@
+Below is a simplified but equivalent conversion of your Jenkinsfile into GitHub Actions YAML.
+(We’ll focus on BUILD, INSTALL, and SAST stages for clarity — others like SONAR and DAST can be added similarly.)
+
+📄 .github/workflows/cdp-demo-java-app.yml
+
+name: CDP Demo Java App Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      PHASE:
+        description: "BUILD, INSTALL, SONAR, SAST, or DAST"
+        required: true
+        default: "BUILD"
+      TARGET_ENV:
+        description: "Select target environment"
+        required: true
+        default: "DEV"
+      GIT_REV:
+        description: "Git revision (default HEAD)"
+        required: false
+        default: "HEAD"
+
+env:
+  APPNAME: "SOEG-CMI"
+  MOTS_ID: "19066"
+  APP_VERSION: "60.4.0"
+  REPO_URL: "https://github.com/ATT-DP1/apm0010208-soegcmi-soegcmi.git"
+  VERACODE_PROXY_HOST: "sub.proxy.att.com"
+  VERACODE_PROXY_PORT: "8080"
+
+jobs:
+  build:
+    if: ${{ github.event.inputs.PHASE == 'BUILD' }}
+    runs-on: self-hosted
+    env:
+      ANT_HOME: /opt/app/ant
+      WORKSPACE: ${{ github.workspace }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.GIT_REV }}
+
+      - name: Set Revision Variable
+        id: revision
+        run: |
+          if [ "${{ github.event.inputs.GIT_REV }}" == "HEAD" ]; then
+            echo "revision=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          else
+            echo "revision=${{ github.event.inputs.GIT_REV }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Package with Ant
+        run: |
+          ${ANT_HOME}/bin/ant -f trunk/build.xml build create.package
+
+      - name: Create SWM Component
+        run: |
+          /opt/app/swm/aftswmcli/bin/swmcli component pkgcreate \
+            -c com.att.soegcmi:soegcmi-all:1-SOEGCMI_${{ github.ref_name }}.${{ steps.revision.outputs.revision }} \
+            -d /opt/app/soegcmi/smogtemplate
+
+      - name: Send DORA Metrics
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{
+              "buildOrDeploy": "build",
+              "project": "${{ env.APPNAME }}",
+              "motsId": "${{ env.MOTS_ID }}",
+              "buildId": "${{ github.run_id }}",
+              "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }' \
+            https://internal-api.att.com/dora/metrics
+
+  install:
+    if: ${{ github.event.inputs.PHASE == 'INSTALL' }}
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.GIT_REV }}
+
+      - name: Install on Target Node
+        run: |
+          chmod +x trunk/jenkins_install.sh
+          trunk/jenkins_install.sh ${{ github.event.inputs.GIT_REV }} ${{ github.event.inputs.TARGET_ENV }} ${{ github.ref_name }}
+
+      - name: Send DORA Deploy Metrics
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{
+              "buildOrDeploy": "deploy",
+              "project": "${{ env.APPNAME }}",
+              "targetEnvironment": "${{ github.event.inputs.TARGET_ENV }}",
+              "buildId": "${{ github.run_id }}",
+              "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }' \
+            https://internal-api.att.com/dora/metrics
+
+  sast:
+    if: ${{ github.event.inputs.PHASE == 'SAST' }}
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build EAR for Veracode
+        run: |
+          ${ANT_HOME}/bin/ant -f trunk/build.xml build create.package
+
+      - name: Upload to Veracode
+        env:
+          VERACODE_API_ID: ${{ secrets.VERACODE_API_ID }}
+          VERACODE_API_KEY: ${{ secrets.VERACODE_API_KEY }}
+        run: |
+          java -jar VeracodeUploader.jar \
+            -vid $VERACODE_API_ID -vkey $VERACODE_API_KEY \
+            -appname "19066-SOEG-CMI" \
+            -createprofile true \
+            -sandboxname "19066-SOEG-CMI-${{ github.run_number }}" \
+            -filepath trunk/smog/SmogBuild/dist/SmogEar.ear \
+            -useproxy true \
+            -proxyhost ${{ env.VERACODE_PROXY_HOST }} \
+            -proxyport ${{ env.VERACODE_PROXY_PORT }}
+
+
+Key Notes on This Conversion
+	1.	Stages become jobs, conditionally executed using if: ${{ github.event.inputs.PHASE == '...' }}.
+	2.	Jenkins credentials → GitHub Secrets, like:
+	•	VERACODE_API_ID, VERACODE_API_KEY
+	•	AFTSWM_USERNAME, AFTSWM_PASSWORD
+	3.	Ant and SWM paths must exist on your self-hosted runner, matching your original Jenkins slave.
+	4.	cicd_notifications.sendDoraMetrics() → replaced with equivalent curl HTTP POST (customizable).
+	5.	withCredentials → replaced with env: from secrets.
