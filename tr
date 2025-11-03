@@ -1,0 +1,23 @@
+Description:
+We are exploring the option of provisioning an on-premises server to act as a GitHub Actions self-hosted runner.
+The runner will primarily be used for build and installation processes in our CI/CD pipelines.
+
+Before proceeding, we would like to confirm with the GitHub team if this setup is feasible and supported within our existing GitHub Enterprise environment.
+
+Details:
+	•	Purpose: To run build and install workflows directly on an on-prem server instead of using GitHub-hosted runners.
+	•	Expected Usage:
+	•	Build Java-based applications
+	•	Perform installation on internal servers after build
+	•	Requirements:
+	•	Network and security prerequisites for connecting the on-prem runner to GitHub
+	•	Any necessary approvals or configuration changes on the GitHub side
+	•	Guidelines for managing authentication, tokens, and runner groups
+
+Action Requested:
+Kindly confirm whether:
+	1.	It is feasible to configure an on-prem server as a GitHub Actions runner within our organization’s setup.
+	2.	Any specific security, access, or configuration steps need to be followed before we proceed with provisioning.
+
+Next Steps (if approved):
+Once confirmed, we’ll share server details and coordinate setup with the infra 
